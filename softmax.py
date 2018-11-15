@@ -3,14 +3,21 @@ import tensorflow as tf
 import pandas as pd
 import math
 
+def get_one_hot(label_num, num_classes = 10):
+    one_hot = np.zeros((num_classes,1))
+    one_hot[int(label_num),0] = 1
+    return one_hot
 
 def initialize_parameters(vector_dim = 40000, num_classes = 10):
 	w = np.random.randn(num_classes, vector_dim)
 	b = np.zeros((num_classes, 1))
 	return w, b
 
+#def softmax(logits):
+	#return np.exp(logits) / np.sum(np.exp(logits), axis=0)
 def softmax(logits):
-    return np.exp(logits) / np.sum(np.exp(logits), axis=0)
+	e_x = np.exp(logits - np.max(logits))
+	return e_x / e_x.sum()
 
 def forward_propagate(inputs, weights, bias):
 	score = np.matmul(weights, inputs) + bias
@@ -37,7 +44,7 @@ def train(songs, labels):
 		attempts = 0
 		for j, row in songs.iterrows():
 			label = labels.iloc[j]
-			label = label[0]
+			label = int(label[0])
 			#print(type(row.values))
 			inputs = row.values
 			inputs = inputs.reshape((40000, 1))
@@ -45,6 +52,7 @@ def train(songs, labels):
 			if pred == label:
 				correct_class += 1
 			attempts += 1
+			label = get_one_hot(label, 10)
 			curr_loss = get_loss(y_hat, label)
 			smoothed_cost_list.append(curr_loss)
 			w, b = back_propagate(w, b, y_hat, label, inputs)
