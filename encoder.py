@@ -7,6 +7,7 @@ input_dim = 40000
 alpha = 0.005
 num_epochs = 200
 batch_size = 16
+classificationweight = 1
 
 def load_data(songs_path, labels_path):
 	print("Loading data......")
@@ -34,12 +35,12 @@ def add_parameters():
 
 def encoder(inputs_batch, weights):
 	a_1 = tf.nn.sigmoid(tf.add(tf.matmul(inputs_batch, weights["W1_encoder"]),weights["b1_encoder"]))
-	a_2 = tf.nn.sigmoid(tf.add(tf.matmul(a_1, weights["W2_encoder"]),weights["b2_encoder"]))
+	a_2 = tf.nn.relu(tf.add(tf.matmul(a_1, weights["W2_encoder"]),weights["b2_encoder"]))
 	return a_2
 
 def decoder(inputs_batch, weights):
 	a_3 = tf.nn.sigmoid(tf.add(tf.matmul(inputs_batch, weights["W1_decoder"]),weights["b1_decoder"]))
-	a_4 = tf.nn.sigmoid(tf.add(tf.matmul(a_3, weights["W2_decoder"]),weights["b2_decoder"]))
+	a_4 = tf.nn.relu(tf.add(tf.matmul(a_3, weights["W2_decoder"]),weights["b2_decoder"]))
 	return a_4
 
 def get_batches(seq, size=batch_size):
@@ -50,7 +51,8 @@ def train(X, Y):
 	weights = add_parameters()
 	encoding = encoder(inputs_batch, weights)
 	y_hat = decoder(encoding, weights)
-	loss = tf.reduce_mean(tf.pow(y_hat - labels_batch, 2))
+	#loss = tf.reduce_mean(tf.pow(y_hat - labels_batch, 2))
+	loss = tf.reduce_mean(tf.pow(y_hat - inputs_batch, 2))
 	optimizer = tf.train.AdamOptimizer(learning_rate = alpha).minimize(loss)
 	init = tf.global_variables_initializer()
 	with tf.Session() as sess:

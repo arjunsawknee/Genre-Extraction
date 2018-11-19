@@ -3,6 +3,14 @@ import sox
 import numpy as np
 import librosa
 import pandas as pd
+import numpy as np
+
+
+
+def get_one_hot(label_num, num_classes = 10):
+    one_hot = np.zeros((1,num_classes))
+    one_hot[0, int(label_num)] = 1
+    return one_hot
 
 def main():
 	"""
@@ -16,6 +24,7 @@ def main():
 	tfm = sox.Transformer()
 	songs = np.zeros((1000, 40000))
 	labels = np.zeros((1000, 1))
+	onehotlabels = np.zeros((1000, 10))
 	counter = 0
 
 	for filename in os.listdir('./genres/blues'):
@@ -24,6 +33,7 @@ def main():
 			audio, sr = librosa.core.load('./genres/blues/'+filename[:-2]+'wav')
 			songs[counter] = audio[:40000]
 			labels[counter] = 0
+			onehotlabels[counter] = get_one_hot(0)
 			counter += 1
 	
 	for filename in os.listdir('./genres/classical'):
@@ -32,6 +42,7 @@ def main():
 			audio, sr = librosa.core.load('./genres/classical/'+filename[:-2]+'wav')
 			songs[counter] = audio[:40000]
 			labels[counter] = 1
+			onehotlabels[counter] = get_one_hot(1)
 			counter += 1
 
 	for filename in os.listdir('./genres/country'):
@@ -40,6 +51,7 @@ def main():
 			audio, sr = librosa.core.load('./genres/country/'+filename[:-2]+'wav')
 			songs[counter] = audio[:40000]
 			labels[counter] = 2
+			onehotlabels[counter] = get_one_hot(2)
 			counter += 1
 
 	for filename in os.listdir('./genres/disco'):
@@ -48,6 +60,7 @@ def main():
 			audio, sr = librosa.core.load('./genres/disco/'+filename[:-2]+'wav')
 			songs[counter] = audio[:40000]
 			labels[counter] = 3
+			onehotlabels[counter] = get_one_hot(3)
 			counter += 1
 
 	for filename in os.listdir('./genres/hiphop'):
@@ -56,6 +69,7 @@ def main():
 			audio, sr = librosa.core.load('./genres/hiphop/'+filename[:-2]+'wav')
 			songs[counter] = audio[:40000]
 			labels[counter] = 4
+			onehotlabels[counter] = get_one_hot(4)
 			counter += 1
 
 	for filename in os.listdir('./genres/jazz'):
@@ -64,6 +78,7 @@ def main():
 			audio, sr = librosa.core.load('./genres/jazz/'+filename[:-2]+'wav')
 			songs[counter] = audio[:40000]
 			labels[counter] = 5
+			onehotlabels[counter] = get_one_hot(5)
 			counter += 1
 
 	for filename in os.listdir('./genres/metal'):
@@ -72,6 +87,7 @@ def main():
 			audio, sr = librosa.core.load('./genres/metal/'+filename[:-2]+'wav')
 			songs[counter] = audio[:40000]
 			labels[counter] = 6
+			onehotlabels[counter] = get_one_hot(6)
 			counter += 1
 
 	for filename in os.listdir('./genres/pop'):
@@ -80,6 +96,7 @@ def main():
 			audio, sr = librosa.core.load('./genres/pop/'+filename[:-2]+'wav')
 			songs[counter] = audio[:40000]
 			labels[counter] = 7
+			onehotlabels[counter] = get_one_hot(7)
 			counter += 1
 
 	for filename in os.listdir('./genres/reggae'):
@@ -88,6 +105,7 @@ def main():
 			audio, sr = librosa.core.load('./genres/reggae/'+filename[:-2]+'wav')
 			songs[counter] = audio[:40000]
 			labels[counter] = 8
+			onehotlabels[counter] = get_one_hot(8)
 			counter += 1
 
 	for filename in os.listdir('./genres/rock'):
@@ -96,12 +114,15 @@ def main():
 			audio, sr = librosa.core.load('./genres/rock/'+filename[:-2]+'wav')
 			songs[counter] = audio[:40000]
 			labels[counter] = 9
+			onehotlabels[counter] = get_one_hot(9)
 			counter += 1
 
 	songs = pd.DataFrame(songs)
 	labels = pd.DataFrame(labels)
-	songs.to_csv('songs.csv', index = False)
-	labels.to_csv('labels.csv', index = False)
+	onehotlabels = pd.DataFrame(onehotlabels)
+	#songs.to_csv('songs.csv', index = False)
+	#labels.to_csv('labels.csv', index = False)
+	onehotlabels.to_csv('onehotlabels.csv', index = False)
 
 	print('Conversion done')
 
