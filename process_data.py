@@ -22,15 +22,33 @@ def main():
 #	exit()
 
 	tfm = sox.Transformer()
-	songs = np.zeros((1000, 40000))
-	labels = np.zeros((1000, 1))
-	onehotlabels = np.zeros((1000, 10))
+	songs = np.zeros((10000, 40000))
+	labels = np.zeros((10000, 1))
+	onehotlabels = np.zeros((10000, 10))
 	counter = 0
 
-	for filename in os.listdir('./genres/blues'):
+	allgenres = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
+	# Splits each song into 10 examples of shape (40000, 1) ~ 2 seconds each
+	numsplit = 10
+	sizesplit = 40000
+	# generalized loop to process data
+	for index in range(len(allgenres)):
+		for filename in os.listdir('./genres/' + allgenres[index]):
+			if filename.endswith(".au"):
+				tfm.build('./genres/'+ allgenres[index] + '/' + filename, './genres/' + allgenres[index] + '/' + filename[:-2]+'wav')
+				audio, sr = librosa.core.load('./genres/' + allgenres[index] + '/' + filename[:-2]+'wav')
+				for j in range(numsplit):
+					songs[counter] = audio[(sizesplit * j) : (sizesplit * (j + 1))]
+					labels[counter] = index
+					onehotlabels[counter] = get_one_hot(index)
+					counter += 1
+
+	'''for filename in os.listdir('./genres/blues'):
 		if filename.endswith(".au"):
 			tfm.build('./genres/blues/'+filename, './genres/blues/'+filename[:-2]+'wav')
 			audio, sr = librosa.core.load('./genres/blues/'+filename[:-2]+'wav')
+			print(audio.shape)
+			exit()
 			songs[counter] = audio[:40000]
 			labels[counter] = 0
 			onehotlabels[counter] = get_one_hot(0)
@@ -115,13 +133,13 @@ def main():
 			songs[counter] = audio[:40000]
 			labels[counter] = 9
 			onehotlabels[counter] = get_one_hot(9)
-			counter += 1
+			counter += 1'''
 
 	songs = pd.DataFrame(songs)
 	labels = pd.DataFrame(labels)
 	onehotlabels = pd.DataFrame(onehotlabels)
-	#songs.to_csv('songs.csv', index = False)
-	#labels.to_csv('labels.csv', index = False)
+	songs.to_csv('songs.csv', index = False)
+	labels.to_csv('labels.csv', index = False)
 	onehotlabels.to_csv('onehotlabels.csv', index = False)
 
 	print('Conversion done')
