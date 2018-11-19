@@ -3,6 +3,9 @@ import tensorflow as tf
 import pandas as pd
 import math
 from random import shuffle
+import os
+import sox
+import librosa
 
 input_dim = 40000
 num_classes = 10
@@ -11,12 +14,48 @@ num_epochs = 200
 batch_size = 16
 classificationweight = 0.000001
 
-def load_data(songs_path, labels_path):
+def get_one_hot(label_num, num_classes = 10):
+    one_hot = np.zeros((1,num_classes))
+    one_hot[0, int(label_num)] = 1
+    return one_hot
+
+def load_data():
+	"""
+		Converts all files of the GTZAN dataset
+		to the WAV (uncompressed) format.
+	"""
+
+	print('Reading data...')
+	tfm = sox.Transformer()
+	songs = np.zeros((10000, 40000))
+	onehotlabels = np.zeros((10000, 10))
+	counter = 0
+
+	allgenres = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
+	# Splits each song into 10 examples of shape (40000, 1) ~ 2 seconds each
+	numsplit = 10
+	sizesplit = 40000
+	# generalized loop to process data
+	for index in range(len(allgenres)):
+		for filename in os.listdir('./genres/' + allgenres[index]):
+			if filename.endswith(".wav"):
+				audio, sr = librosa.core.load('./genres/' + allgenres[index] + '/' + filename)
+				for j in range(numsplit):
+					songs[counter] = audio[(sizesplit * j) : (sizesplit * (j + 1))]
+					onehotlabels[counter] = get_one_hot(index)
+					counter += 1
+	songs = pd.DataFrame(songs)
+	onehotlabels = pd.DataFrame(onehotlabels)
+	print('Data reading done :)')
+	return songs, onehotlabels
+
+
+'''def load_data(songs_path, labels_path):
 	print("Loading data...")
 	songs = pd.read_csv(songs_path)
 	labels = pd.read_csv(labels_path)
 	print("Congrats mate.")
-	return songs, labels
+	return songs, labels'''
 
 def get_placeholders():
 	inputs_placeholder = tf.placeholder(tf.float32, (None, input_dim))
@@ -85,6 +124,7 @@ def train(X, Y, X_dev, Y_dev):
 		Y = Y.iloc[ind_list]
 		for iteration in range(num_epochs):
 			inputs_batches = get_batches(X)
+			print(inputs_batches)
 
 			labels_batches = get_batches(Y)
 
@@ -120,17 +160,18 @@ def train(X, Y, X_dev, Y_dev):
 			print("Epoch " + str(iteration+1) + ", Dev Accuracy: " + str(devaccuracy))
 
 def main():
-	songs, labels = load_data('songs.csv','onehotlabels.csv')
+	#songs, labels = load_data('songs.csv','onehotlabels.csv')
+	songs, labels = load_data()
 
 	# Shuffling training set
 	ind_list=[i for i in range(songs.shape[0])]
 	shuffle(ind_list)
 	songs = songs.iloc[ind_list]
 	labels = labels.iloc[ind_list]
-	songs_train = songs.iloc[0:800]
-	songs_dev = songs.iloc[800:]
-	labels_train = labels.iloc[0:800]
-	labels_dev = labels.iloc[800:]
+	songs_train = songs.iloc[0:8000]
+	songs_dev = songs.iloc[8000:]
+	labels_train = labels.iloc[0:8000]
+	labels_dev = labels.iloc[8000:]
 	train(songs_train, labels_train, songs_dev, labels_dev)
 
 if __name__== "__main__":
