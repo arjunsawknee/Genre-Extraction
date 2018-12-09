@@ -7,8 +7,7 @@ import os
 import sox
 import librosa
 
-# OPTIMAL HYPERPARAMETERS: alpha: 0.0001, classificationweight = 1, input_dim = 500, (artificial sr = 500 Hz), 
-# Encoder: 500 -> 1024 -> 512, Decoder: 512 -> 1024 -> 500
+# OPTIMAL HYPERPARAMETERS: alpha: 0.0001, classificationweight = 0.5, input_dim = 500, (artificial sr = 500 Hz), 
 #input_dim = 40000
 #input_dim = 20000
 input_dim = 500
@@ -19,7 +18,7 @@ num_classes = 4
 alpha = 0.0001
 num_epochs = 200
 batch_size = 512
-classificationweight = 0.5
+classificationweight = 1
 
 def get_one_hot(label_num, num_classes = 4):
     one_hot = np.zeros((1,num_classes))
@@ -40,7 +39,7 @@ def load_data():
 
 	#allgenres = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
 	# Use four classes only
-	allgenres = ['classical', 'jazz', 'metal', 'pop']
+	allgenres = ['classical', 'jazz', 'metal', 'reggae']
 	# Splits each song into 10 examples of shape (40000, 1) ~ 2 seconds each
 	'''numsplit = 10
 	sizesplit = 40000'''
@@ -74,40 +73,60 @@ def get_placeholders():
 	labels_placeholder = tf.placeholder(tf.float32, (None, num_classes))
 	tf.add_to_collection('inputs_placeholder', inputs_placeholder)
 	tf.add_to_collection('labels_placeholder', labels_placeholder)
-	return inputs_placeholder, labels_placeholder
+	keep_prob = tf.placeholder_with_default(1.0, shape=(), name='keep_prob')
+	return inputs_placeholder, labels_placeholder, keep_prob
 
 def add_parameters():
 	weights = {}
 	weights["W1_encoder"] = tf.get_variable(name="W1_encoder", shape = (input_dim, 256), initializer = tf.contrib.layers.xavier_initializer())
-	weights["W2_encoder"] = tf.get_variable(name="W2_encoder", shape = (256, 128), initializer = tf.contrib.layers.xavier_initializer())
-	weights["W1_decoder"] = tf.get_variable(name="W1_decoder", shape = (128, 256), initializer = tf.contrib.layers.xavier_initializer())
-	weights["W2_decoder"] = tf.get_variable(name="W2_decoder", shape = (256, input_dim), initializer = tf.contrib.layers.xavier_initializer())
+	weights["W2_encoder"] = tf.get_variable(name="W2_encoder", shape = (256, 192), initializer = tf.contrib.layers.xavier_initializer())
+	weights["W3_encoder"] = tf.get_variable(name="W3_encoder", shape = (192, 128), initializer = tf.contrib.layers.xavier_initializer())
+	weights["W4_encoder"] = tf.get_variable(name="W4_encoder", shape = (128, 64), initializer = tf.contrib.layers.xavier_initializer())
+	
+	weights["W1_decoder"] = tf.get_variable(name="W1_decoder", shape = (64, 128), initializer = tf.contrib.layers.xavier_initializer())
+	weights["W2_decoder"] = tf.get_variable(name="W2_decoder", shape = (128, 192), initializer = tf.contrib.layers.xavier_initializer())
+	weights["W3_decoder"] = tf.get_variable(name="W3_decoder", shape = (192, 256), initializer = tf.contrib.layers.xavier_initializer())
+	weights["W4_decoder"] = tf.get_variable(name="W4_decoder", shape = (256, input_dim), initializer = tf.contrib.layers.xavier_initializer())
+
 	weights["b1_encoder"] = tf.get_variable(name="b1_encoder", initializer = tf.zeros((1,256)))
-	weights["b2_encoder"] = tf.get_variable(name="b2_encoder", initializer = tf.zeros((1,128)))
-	weights["b1_decoder"] = tf.get_variable(name="b1_decoder", initializer = tf.zeros((1,256)))
-	weights["b2_decoder"] = tf.get_variable(name="b2_decoder", initializer = tf.zeros((1, input_dim)))
+	weights["b2_encoder"] = tf.get_variable(name="b2_encoder", initializer = tf.zeros((1,192)))
+	weights["b3_encoder"] = tf.get_variable(name="b3_encoder", initializer = tf.zeros((1,128)))
+	weights["b4_encoder"] = tf.get_variable(name="b4_encoder", initializer = tf.zeros((1,64)))
+	
+	weights["b1_decoder"] = tf.get_variable(name="b1_decoder", initializer = tf.zeros((1,128)))
+	weights["b2_decoder"] = tf.get_variable(name="b2_decoder", initializer = tf.zeros((1,192)))
+	weights["b3_decoder"] = tf.get_variable(name="b3_decoder", initializer = tf.zeros((1,256)))
+	weights["b4_decoder"] = tf.get_variable(name="b4_decoder", initializer = tf.zeros((1, input_dim)))
 
 	# Softmax classifier weights
-	weights["W1_softmax"] = tf.get_variable(name="W1_softmax", shape = (128, 64), initializer = tf.contrib.layers.xavier_initializer())
-	weights["b1_softmax"] = tf.get_variable(name="b1_softmax", initializer = tf.zeros((1,64)))
-	weights["W2_softmax"] = tf.get_variable(name="W2_softmax", shape = (64, 32), initializer = tf.contrib.layers.xavier_initializer())
-	weights["b2_softmax"] = tf.get_variable(name="b2_softmax", initializer = tf.zeros((1,32)))
-	weights["W3_softmax"] = tf.get_variable(name="W3_softmax", shape = (32, num_classes), initializer = tf.contrib.layers.xavier_initializer())
+	weights["W1_softmax"] = tf.get_variable(name="W1_softmax", shape = (64, 32), initializer = tf.contrib.layers.xavier_initializer())
+	weights["b1_softmax"] = tf.get_variable(name="b1_softmax", initializer = tf.zeros((1,32)))
+	weights["W2_softmax"] = tf.get_variable(name="W2_softmax", shape = (32, 16), initializer = tf.contrib.layers.xavier_initializer())
+	weights["b2_softmax"] = tf.get_variable(name="b2_softmax", initializer = tf.zeros((1,16)))
+	weights["W3_softmax"] = tf.get_variable(name="W3_softmax", shape = (16, num_classes), initializer = tf.contrib.layers.xavier_initializer())
 	weights["b3_softmax"] = tf.get_variable(name="b3_softmax", initializer = tf.zeros((1,num_classes)))
 	return weights
 
-def encoder(inputs_batch, weights):
+def encoder(inputs_batch, weights, keep_prob):
 	a_1 = tf.nn.sigmoid(tf.add(tf.matmul(inputs_batch, weights["W1_encoder"]),weights["b1_encoder"]))
-	a_2 = tf.nn.relu(tf.add(tf.matmul(a_1, weights["W2_encoder"]),weights["b2_encoder"]))
-	return a_2
-
-def decoder(inputs_batch, weights):
-	a_3 = tf.nn.sigmoid(tf.add(tf.matmul(inputs_batch, weights["W1_decoder"]),weights["b1_decoder"]))
-	a_4 = tf.nn.relu(tf.add(tf.matmul(a_3, weights["W2_decoder"]),weights["b2_decoder"]))
+	#a_1 = tf.nn.dropout(a_1, keep_prob)
+	a_2 = tf.nn.tanh(tf.add(tf.matmul(a_1, weights["W2_encoder"]),weights["b2_encoder"]))
+	a_2 = tf.nn.dropout(a_2, keep_prob)
+	a_3 = tf.nn.relu(tf.add(tf.matmul(a_2, weights["W3_encoder"]),weights["b3_encoder"]))
+	a_4 = tf.nn.relu(tf.add(tf.matmul(a_3, weights["W4_encoder"]),weights["b4_encoder"]))
 	return a_4
 
+def decoder(inputs_batch, weights, keep_prob):
+	a_5 = tf.nn.sigmoid(tf.add(tf.matmul(inputs_batch, weights["W1_decoder"]),weights["b1_decoder"]))
+	#a_4 = tf.nn.dropout(a_4, keep_prob)
+	a_6 = tf.nn.sigmoid(tf.add(tf.matmul(a_5, weights["W2_decoder"]),weights["b2_decoder"]))
+	a_6 = tf.nn.dropout(a_6, keep_prob)
+	a_7 = tf.nn.relu(tf.add(tf.matmul(a_6, weights["W3_decoder"]),weights["b3_decoder"]))
+	a_8 = tf.nn.relu(tf.add(tf.matmul(a_7, weights["W4_decoder"]),weights["b4_decoder"]))
+	return a_8
+
 # Convention of h for hidden layers of classifier
-def softmaxclassifier(inputs_batch, weights):
+def softmaxclassifier(inputs_batch, weights, keep_prob):
 	h_1  = tf.nn.tanh(tf.add(tf.matmul(inputs_batch, weights["W1_softmax"]), weights["b1_softmax"]))
 	h_2  = tf.nn.tanh(tf.add(tf.matmul(h_1, weights["W2_softmax"]), weights["b2_softmax"]))
 
@@ -120,14 +139,16 @@ def get_batches(seq, size=batch_size):
 
 def train(X, Y, X_dev, Y_dev):
 	tf.reset_default_graph()
-	inputs_batch, labels_batch = get_placeholders()
+	inputs_batch, labels_batch, keep_prob = get_placeholders()
 	weights = add_parameters()
-	encoding = encoder(inputs_batch, weights)
-	decoding = decoder(encoding, weights)
+	# Tunable hyperparameter
+	keep_prob = 0.8
+	encoding = encoder(inputs_batch, weights, keep_prob)
+	decoding = decoder(encoding, weights, keep_prob)
 	tf.add_to_collection("encoding", encoding)
 	tf.add_to_collection("decoding", decoding)
 
-	y_hat = softmaxclassifier(encoding, weights)
+	y_hat = softmaxclassifier(encoding, weights, keep_prob)
 	tf.add_to_collection("y_hat", y_hat)
 
 	# Check shape of labels: need to be shape (batch_size, num_classes) according to documentation
