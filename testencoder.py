@@ -93,13 +93,13 @@ def runPCA2D(sess, decoding, encoding, inputs_batch, labels_batch, X, Y):
 	pca.fit(latents)
 	latents = pca.transform(latents)
 
-	colors = [('red', 'Classical', 0), ('turquoise', 'Jazz', 1), ('darkorange', 'Metal', 2), ('magenta', 'Pop', 3)]
+	colors = [('navy', 'Classical', 0), ('green', 'Jazz', 1), ('darkorange', 'Metal', 2), ('purple', 'Pop', 3)]
 	colors = reversed(colors)
 	for color, name, label in colors:
 		plt.scatter(latents[truelabels == label, 0], latents[truelabels == label, 1], color=color, alpha=.5,
-                label=name)
+                label=name, edgecolor='k')
 	plt.title('PCA of 128-Dim Vanilla Autoencoder Bottleneck')
-	plt.legend(loc='best', shadow=False, scatterpoints=1)
+	plt.legend(loc='upper right', shadow=False, scatterpoints=1)
 	'''for name, label in [('Classical', 0), ('Jazz', 1), ('Metal', 2), ('Pop', 3)]:
 		ax.text(
 			latents[truelabels == label, 0].mean(),
@@ -149,7 +149,7 @@ def runPCA3D(sess, decoding, encoding, inputs_batch, labels_batch, X, Y):
 
 def test(X, Y):
 	with tf.Session() as sess:
-		new_saver = tf.train.import_meta_graph('./modelWeights/autoencoder/autoencoder-100.meta')
+		new_saver = tf.train.import_meta_graph('./modelWeights/autoencoder/autoencoder-400.meta')
 		new_saver.restore(sess, tf.train.latest_checkpoint('./modelWeights/autoencoder'))
 		graph = tf.get_default_graph()
 		inputs_batch = tf.get_collection('inputs_placeholder')[0]

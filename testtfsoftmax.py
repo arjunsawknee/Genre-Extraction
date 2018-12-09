@@ -93,13 +93,12 @@ def runPCA2D(sess, inputs_batch, labels_batch, X, Y, y_hat):
 	pca.fit(logits)
 	logits = pca.transform(logits)
 
-	colors = [('red', 'Classical', 0), ('turquoise', 'Jazz', 1), ('darkorange', 'Metal', 2), ('magenta', 'Pop', 3)]
-	colors = reversed(colors)
+	colors = [('purple', 'Pop', 3), ('darkorange', 'Metal', 2), ('green', 'Jazz', 1), ('navy', 'Classical', 0)]
 	for color, name, label in colors:
 		plt.scatter(logits[truelabels == label, 0], logits[truelabels == label, 1], color=color, alpha=.5,
                 label=name, edgecolor = 'k')
-	plt.title('PCA of Softmax Regression')
-	plt.legend(loc='best', shadow=False, scatterpoints=1)
+	plt.title('PCA of 4-Dim Softmax Regression Logits')
+	plt.legend(loc='upper right', shadow=False, scatterpoints=1)
 	#for name, label in [('Classical', 0), ('Jazz', 1), ('Metal', 2), ('Pop', 3)]:
 	#	ax.text(
 	#		latents[truelabels == label, 0].mean(),
@@ -153,7 +152,7 @@ def runPCA3D(sess, inputs_batch, labels_batch, X, Y, y_hat):
 
 def test(X, Y):
 	with tf.Session() as sess:
-		new_saver = tf.train.import_meta_graph('./modelWeights/tfsoftmax/tfsotmax-200.meta')
+		new_saver = tf.train.import_meta_graph('./modelWeights/tfsoftmax/tfsoftmax-200.meta')
 		new_saver.restore(sess, tf.train.latest_checkpoint('./modelWeights/tfsoftmax'))
 		graph = tf.get_default_graph()
 		inputs_batch = tf.get_collection('inputs_placeholder')[0]
@@ -188,8 +187,8 @@ def test(X, Y):
 		#plt.show()
 
 
-		#runPCA2D(sess, inputs_batch, labels_batch, X, Y, y_hat)
-		runPCA3D(sess, inputs_batch, labels_batch, X, Y, y_hat)
+		runPCA2D(sess, inputs_batch, labels_batch, X, Y, y_hat)
+		#runPCA3D(sess, inputs_batch, labels_batch, X, Y, y_hat)
 
 
 def main():

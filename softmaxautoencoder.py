@@ -246,8 +246,8 @@ def main():
 	labels_dev = labels.iloc[6000:]
 
 	# Write dev values to a csv for testing:
-	'''songs_dev.to_csv('songs_dev.csv', index = False)
-	labels_dev.to_csv('labels_dev.csv', index = False)'''
+	songs_dev.to_csv('songs_dev.csv', index = False)
+	labels_dev.to_csv('labels_dev.csv', index = False)
 
 	train(songs_train, labels_train, songs_dev, labels_dev)
 

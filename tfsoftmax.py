@@ -27,8 +27,8 @@ def load_data():
 
 	print('Reading data...')
 	tfm = sox.Transformer()
-	songs = np.zeros((20000, input_dim))
-	onehotlabels = np.zeros((20000, num_classes))
+	songs = np.zeros((8000, input_dim))
+	onehotlabels = np.zeros((8000, num_classes))
 	counter = 0
 
 	allgenres = ['classical', 'jazz', 'metal', 'pop']
@@ -164,7 +164,7 @@ def train(X, Y, X_dev, Y_dev):
 			#print("Dev accuracies: ", dev_accuracies)
 			#print("Train smoothed cost: ", loss_per_epoch)
 
-			saver.save(sess, './modelWeights/tfsoftmax', global_step = (iteration+1))
+			saver.save(sess, './modelWeights/tfsoftmax/tfsoftmax', global_step = (iteration+1))
 			objectives_summary = tf.Summary()
 			objectives_summary.value.add(tag='train_accuracy', simple_value=accuracy)
 			objectives_summary.value.add(tag='dev_accuracy', simple_value=devaccuracy)

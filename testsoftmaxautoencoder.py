@@ -70,47 +70,39 @@ def runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat):
 	'''truelabels = tf.math.argmax(Y, axis=1).eval()
 	pca = decomposition.PCA(n_components = 3)
 	pca.fit(X)
-	latents = pca.transform(X)'''
-
-	# uncomment out for labels of clusters (may overlap)
-	'''for name, label in [('Classical', 0), ('Jazz', 1), ('Metal', 2), ('Pop', 3)]:
-		ax.text(
-			latents[truelabels == label, 0].mean(),
-			latents[truelabels == label, 1].mean(),
-			name,
-			horizontalalignment = 'center',
-			bbox=dict(alpha=.5, edgecolor='w', facecolor='w'))
-	ax.scatter(latents[:, 0], latents[:, 1], c=truelabels, cmap=plt.cm.nipy_spectral,
-		   edgecolor='k')
+	latents = pca.transform(X)
+	colors = [('purple', 'Pop', 3), ('darkorange', 'Metal', 2), ('green', 'Jazz', 1), ('navy', 'Classical', 0)]
+	for color, name, label in colors:
+		plt.scatter(latents[truelabels == label, 0], latents[truelabels == label, 1], color=color, alpha=.5,
+                label=name, edgecolor='k')
+	plt.title('PCA of 500-Dim Raw Audio Data')
+	plt.legend(loc='upper right', shadow=False, scatterpoints=1)
 	plt.show()'''
 
 	# run PCA on encoder results
-	_, latents = sess.run([encoding, y_hat], feed_dict={inputs_batch : X, labels_batch : Y})
-	truelabels = tf.math.argmax(Y, axis=1).eval()
-
-	pca = decomposition.PCA(n_components = 3)
+	#latents = sess.run([encoding], feed_dict={inputs_batch : X, labels_batch : Y})
 	#latents = latents[0]
+	#run PCA on the logits of the deep softmax autoencoders
+	_, latents = sess.run([encoding, y_hat], feed_dict={inputs_batch : X, labels_batch : Y})
+
+	truelabels = tf.math.argmax(Y, axis=1).eval()
+	pca = decomposition.PCA(n_components = 3)
 	pca.fit(latents)
 	latents = pca.transform(latents)
 
-	colors = [('red', 'Classical', 0), ('turquoise', 'Jazz', 1), ('darkorange', 'Metal', 2), ('magenta', 'Pop', 3)]
-	colors = reversed(colors)
+	# Order for logits of the deep softmax autoencoder
+	colors = [('green', 'Jazz', 1), ('darkorange', 'Metal', 2), ('purple', 'Pop', 3), ('navy', 'Classical', 0)]
+	# Order for the encoder results
+	#colors = [('purple', 'Pop', 3), ('darkorange', 'Metal', 2), ('green', 'Jazz', 1), ('navy', 'Classical', 0)]
 	for color, name, label in colors:
 		plt.scatter(latents[truelabels == label, 0], latents[truelabels == label, 1], color=color, alpha=.5,
-                label=name)
-	plt.title('PCA of 128-Dim Deep Softmax Autoencoder Bottleneck')
-	plt.legend(loc='best', shadow=False, scatterpoints=1)
+                label=name, edgecolor='k')
 
-	'''for name, label in [('Classical', 0), ('Jazz', 1), ('Metal', 2), ('Pop', 3)]:
-		ax.text(
-			latents[truelabels == label, 0].mean(),
-			latents[truelabels == label, 1].mean(),
-			name,
-			horizontalalignment = 'center',
-			bbox=dict(alpha=.5, edgecolor='w', facecolor='w'))
-
-	ax.scatter(latents[:, 0], latents[:, 1], c=truelabels, cmap=plt.cm.nipy_spectral,
-		   edgecolor='k')'''
+	# Title for encoder results
+	#plt.title('PCA of 128-Dim Deep Softmax Autoencoder Bottleneck')
+	# Title for logits of deep softmax autoencoder
+	plt.title('PCA of 4-Dim Deep Softmax Autoencoder Logits')
+	plt.legend(loc='upper right', shadow=False, scatterpoints=1)
 
 	plt.show()
 
@@ -130,7 +122,14 @@ def runPCA3D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat):
 	pca.fit(latents)
 	latents = pca.transform(latents)
 
-	for name, label in [('Classical', 0), ('Jazz', 1), ('Metal', 2), ('Pop', 3)]:
+	colors = [('purple', 'Pop', 3), ('darkorange', 'Metal', 2), ('green', 'Jazz', 1), ('navy', 'Classical', 0)]
+	for color, name, label in colors:
+		plt.scatter(latents[truelabels == label, 0], latents[truelabels == label, 1], color=color, alpha=.5,
+                label=name, edgecolor='k')
+	plt.title('PCA of 128-Dim Deep Softmax Autoencoder Bottleneck')
+	plt.legend(loc='upper right', shadow=False, scatterpoints=1)
+
+	'''for name, label in [('Classical', 0), ('Jazz', 1), ('Metal', 2), ('Pop', 3)]:
 		ax.text(
 			latents[truelabels == label, 0].mean(),
 			latents[truelabels == label, 1].mean(),
@@ -140,7 +139,7 @@ def runPCA3D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat):
 			bbox=dict(alpha=.5, edgecolor='w', facecolor='w'))
 
 	ax.scatter(latents[:, 0], latents[:, 1], latents[:, 2], c=truelabels, cmap=plt.cm.nipy_spectral,
-		   edgecolor='k')
+		   edgecolor='k')'''
 	plt.show()
 
 
@@ -171,22 +170,22 @@ def test(X, Y):
 		correct_labels = truelabels.eval()
 		confmat = confusion_matrix(correct_labels, pred, class_names)
 		np.set_printoptions(precision=2)
-		#plt.figure()
-		#plot_confusion_matrix(confmat, classes=class_names, normalize=False, title='Confusion matrix, without normalization')
-		#plt.figure()
-		#plot_confusion_matrix(confmat, classes=class_names, normalize=True, title='Normalized confusion matrix')
+		plt.figure()
+		plot_confusion_matrix(confmat, classes=class_names, normalize=False, title='Confusion matrix, without normalization')
+		plt.figure()
+		plot_confusion_matrix(confmat, classes=class_names, normalize=True, title='Normalized Confusion Matrix over Validation Set')
 		# Commented out to prevent showing the matrix everytime code is run
-		#plt.show()
+		plt.show()
 
 
-		runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat)
+		#runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat)
 		#runPCA3D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat)
 
 
 def main():
-	#songs = pd.read_csv('songs_dev.csv')
-	#labels = pd.read_csv('labels_dev.csv')
-	songs, labels = load_data()
+	songs = pd.read_csv('songs_dev.csv')
+	labels = pd.read_csv('labels_dev.csv')
+	#songs, labels = load_data()
 	test(songs, labels)
 
 if __name__== "__main__":
