@@ -58,7 +58,7 @@ def plot_confusion_matrix(cm, classes,
 	plt.ylabel('True label')
 	plt.xlabel('Predicted label')
 
-def runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y):
+def runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat):
 	# set up
 	allgenres = ['classical', 'jazz', 'metal', 'pop']
 	fig = plt.figure(1, figsize=(4, 3))
@@ -67,10 +67,10 @@ def runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y):
 	plt.cla()
 
 	# run PCA on raw data
-	truelabels = tf.math.argmax(Y, axis=1).eval()
+	'''truelabels = tf.math.argmax(Y, axis=1).eval()
 	pca = decomposition.PCA(n_components = 3)
 	pca.fit(X)
-	latents = pca.transform(X)
+	latents = pca.transform(X)'''
 
 	# uncomment out for labels of clusters (may overlap)
 	'''for name, label in [('Classical', 0), ('Jazz', 1), ('Metal', 2), ('Pop', 3)]:
@@ -80,17 +80,16 @@ def runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y):
 			name,
 			horizontalalignment = 'center',
 			bbox=dict(alpha=.5, edgecolor='w', facecolor='w'))
-'''
 	ax.scatter(latents[:, 0], latents[:, 1], c=truelabels, cmap=plt.cm.nipy_spectral,
 		   edgecolor='k')
-	plt.show()
+	plt.show()'''
 
 	# run PCA on encoder results
-	'''latents = sess.run([encoding], feed_dict={inputs_batch : X, labels_batch : Y})
+	_, latents = sess.run([encoding, y_hat], feed_dict={inputs_batch : X, labels_batch : Y})
 	truelabels = tf.math.argmax(Y, axis=1).eval()
 
 	pca = decomposition.PCA(n_components = 3)
-	latents = latents[0]
+	#latents = latents[0]
 	pca.fit(latents)
 	latents = pca.transform(latents)
 
@@ -104,14 +103,13 @@ def runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y):
 
 	ax.scatter(latents[:, 0], latents[:, 1], c=truelabels, cmap=plt.cm.nipy_spectral,
 		   edgecolor='k')
-	ax.legend()
 
-	plt.show()'''
+	plt.show()
 
-def runPCA3D(sess, encoding, inputs_batch, labels_batch, X, Y):
+def runPCA3D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat):
 	allgenres = ['classical', 'jazz', 'metal', 'pop']
 
-	latents = sess.run([encoding], feed_dict={inputs_batch : X, labels_batch : Y})
+	_, latents = sess.run([encoding, y_hat], feed_dict={inputs_batch : X, labels_batch : Y})
 	truelabels = tf.math.argmax(Y, axis=1).eval()
 
 	fig = plt.figure(1, figsize=(4, 3))
@@ -120,7 +118,7 @@ def runPCA3D(sess, encoding, inputs_batch, labels_batch, X, Y):
 	plt.cla()
 
 	pca = decomposition.PCA(n_components = 3)
-	latents = latents[0]
+	#latents = latents[0]
 	pca.fit(latents)
 	latents = pca.transform(latents)
 
@@ -135,7 +133,7 @@ def runPCA3D(sess, encoding, inputs_batch, labels_batch, X, Y):
 
 	ax.scatter(latents[:, 0], latents[:, 1], latents[:, 2], c=truelabels, cmap=plt.cm.nipy_spectral,
 		   edgecolor='k')
-	#plt.show()
+	plt.show()
 
 
 def test(X, Y):
@@ -173,13 +171,14 @@ def test(X, Y):
 		#plt.show()
 
 
-		runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y)
-		runPCA3D(sess, encoding, inputs_batch, labels_batch, X, Y)
+		runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat)
+		#runPCA3D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat)
 
 
 def main():
-	songs = pd.read_csv('songs_dev.csv')
-	labels = pd.read_csv('labels_dev.csv')
+	#songs = pd.read_csv('songs_dev.csv')
+	#labels = pd.read_csv('labels_dev.csv')
+	songs, labels = load_data()
 	test(songs, labels)
 
 if __name__== "__main__":
