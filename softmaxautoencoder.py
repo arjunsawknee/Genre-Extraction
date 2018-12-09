@@ -7,15 +7,21 @@ import os
 import sox
 import librosa
 
+# OPTIMAL HYPERPARAMETERS: alpha: 0.0001, classificationweight = 1, input_dim = 500, (artificial sr = 500 Hz), 
+# Encoder: 500 -> 1024 -> 512, Decoder: 512 -> 1024 -> 500
 #input_dim = 40000
+#input_dim = 20000
 input_dim = 500
-num_classes = 10
+
+numexamples = 8000
+
+num_classes = 4
 alpha = 0.0001
 num_epochs = 200
 batch_size = 512
-classificationweight = 0.0001
+classificationweight = 0.5
 
-def get_one_hot(label_num, num_classes = 10):
+def get_one_hot(label_num, num_classes = 4):
     one_hot = np.zeros((1,num_classes))
     one_hot[0, int(label_num)] = 1
     return one_hot
@@ -28,23 +34,32 @@ def load_data():
 
 	print('Reading data...')
 	tfm = sox.Transformer()
-	songs = np.zeros((20000, input_dim))
-	onehotlabels = np.zeros((20000, num_classes))
+	songs = np.zeros((numexamples, input_dim))
+	onehotlabels = np.zeros((numexamples, num_classes))
 	counter = 0
 
-	allgenres = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
+	#allgenres = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
+	# Use four classes only
+	allgenres = ['classical', 'jazz', 'metal', 'pop']
 	# Splits each song into 10 examples of shape (40000, 1) ~ 2 seconds each
 	'''numsplit = 10
 	sizesplit = 40000'''
 
 	# splits of 1 second each:
+	# numexamples should be numsplit * 1000, since we have 1000 songs
 	numsplit = 20
 	sizesplit = input_dim
 	# generalized loop to process data
 	for index in range(len(allgenres)):
 		for filename in os.listdir('./genres/' + allgenres[index]):
 			if filename.endswith(".wav"):
-				audio, sr = librosa.core.load('./genres/' + allgenres[index] + '/' + filename, sr=500)
+				audio, sr = librosa.core.load('./genres/' + allgenres[index] + '/' + filename)
+
+				# Takes mean of values to form artificial sampling rate of 500Hz
+				audio = audio[:600000]
+				audio = audio.reshape(15000, 40)
+				audio = np.mean(audio, axis=1)
+
 				for j in range(numsplit):
 					songs[counter] = audio[(sizesplit * j) : (sizesplit * (j + 1))]
 					onehotlabels[counter] = get_one_hot(index)
@@ -63,20 +78,22 @@ def get_placeholders():
 
 def add_parameters():
 	weights = {}
-	weights["W1_encoder"] = tf.get_variable(name="W1_encoder", shape = (input_dim, 1024), initializer = tf.contrib.layers.xavier_initializer())
-	weights["W2_encoder"] = tf.get_variable(name="W2_encoder", shape = (1024, 512), initializer = tf.contrib.layers.xavier_initializer())
-	weights["W1_decoder"] = tf.get_variable(name="W1_decoder", shape = (512, 1024), initializer = tf.contrib.layers.xavier_initializer())
-	weights["W2_decoder"] = tf.get_variable(name="W2_decoder", shape = (1024, input_dim), initializer = tf.contrib.layers.xavier_initializer())
-	weights["b1_encoder"] = tf.get_variable(name="b1_encoder", initializer = tf.zeros((1,1024)))
-	weights["b2_encoder"] = tf.get_variable(name="b2_encoder", initializer = tf.zeros((1,512)))
-	weights["b1_decoder"] = tf.get_variable(name="b1_decoder", initializer = tf.zeros((1,1024)))
+	weights["W1_encoder"] = tf.get_variable(name="W1_encoder", shape = (input_dim, 256), initializer = tf.contrib.layers.xavier_initializer())
+	weights["W2_encoder"] = tf.get_variable(name="W2_encoder", shape = (256, 128), initializer = tf.contrib.layers.xavier_initializer())
+	weights["W1_decoder"] = tf.get_variable(name="W1_decoder", shape = (128, 256), initializer = tf.contrib.layers.xavier_initializer())
+	weights["W2_decoder"] = tf.get_variable(name="W2_decoder", shape = (256, input_dim), initializer = tf.contrib.layers.xavier_initializer())
+	weights["b1_encoder"] = tf.get_variable(name="b1_encoder", initializer = tf.zeros((1,256)))
+	weights["b2_encoder"] = tf.get_variable(name="b2_encoder", initializer = tf.zeros((1,128)))
+	weights["b1_decoder"] = tf.get_variable(name="b1_decoder", initializer = tf.zeros((1,256)))
 	weights["b2_decoder"] = tf.get_variable(name="b2_decoder", initializer = tf.zeros((1, input_dim)))
 
 	# Softmax classifier weights
-	weights["W1_softmax"] = tf.get_variable(name="W1_softmax", shape = (512, 128), initializer = tf.contrib.layers.xavier_initializer())
-	weights["b1_softmax"] = tf.get_variable(name="b1_softmax", initializer = tf.zeros((1,128)))
-	weights["W2_softmax"] = tf.get_variable(name="W2_softmax", shape = (128, num_classes), initializer = tf.contrib.layers.xavier_initializer())
-	weights["b2_softmax"] = tf.get_variable(name="b2_softmax", initializer = tf.zeros((1,num_classes)))
+	weights["W1_softmax"] = tf.get_variable(name="W1_softmax", shape = (128, 64), initializer = tf.contrib.layers.xavier_initializer())
+	weights["b1_softmax"] = tf.get_variable(name="b1_softmax", initializer = tf.zeros((1,64)))
+	weights["W2_softmax"] = tf.get_variable(name="W2_softmax", shape = (64, 32), initializer = tf.contrib.layers.xavier_initializer())
+	weights["b2_softmax"] = tf.get_variable(name="b2_softmax", initializer = tf.zeros((1,32)))
+	weights["W3_softmax"] = tf.get_variable(name="W3_softmax", shape = (32, num_classes), initializer = tf.contrib.layers.xavier_initializer())
+	weights["b3_softmax"] = tf.get_variable(name="b3_softmax", initializer = tf.zeros((1,num_classes)))
 	return weights
 
 def encoder(inputs_batch, weights):
@@ -92,8 +109,11 @@ def decoder(inputs_batch, weights):
 # Convention of h for hidden layers of classifier
 def softmaxclassifier(inputs_batch, weights):
 	h_1  = tf.nn.tanh(tf.add(tf.matmul(inputs_batch, weights["W1_softmax"]), weights["b1_softmax"]))
-	h_2 = tf.nn.softmax(tf.add(tf.matmul(h_1, weights["W2_softmax"]), weights["b2_softmax"]))
-	return h_2
+	h_2  = tf.nn.tanh(tf.add(tf.matmul(h_1, weights["W2_softmax"]), weights["b2_softmax"]))
+
+	# Remove softmax from here
+	h_3 = tf.add(tf.matmul(h_2, weights["W3_softmax"]), weights["b3_softmax"])
+	return h_3
 
 def get_batches(seq, size=batch_size):
     return [seq[pos:pos + size] for pos in range(0, len(seq), size)]
@@ -111,8 +131,12 @@ def train(X, Y, X_dev, Y_dev):
 	tf.add_to_collection("y_hat", y_hat)
 
 	# Check shape of labels: need to be shape (batch_size, num_classes) according to documentation
-	loss = tf.reduce_mean(tf.pow(decoding - inputs_batch, 2)) + tf.reduce_mean((classificationweight * tf.nn.softmax_cross_entropy_with_logits_v2(labels=labels_batch, logits=y_hat)))
+	loss = tf.reduce_mean(tf.pow(decoding - inputs_batch, 2)) + tf.reduce_mean((classificationweight * tf.nn.softmax_cross_entropy_with_logits_v2(labels=tf.stop_gradient(labels_batch), logits=y_hat)))
+	
+	# Loss without autnencoder portion
+	#loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=tf.stop_gradient(labels_batch), logits=y_hat))
 	tf.add_to_collection("loss", loss)
+
 	# Just reconstruction loss: order of magnitude 0.005-0.01
 	#loss = tf.reduce_mean(tf.pow(decoding - inputs_batch, 2))
 	# Just cross entropy loss: order of magnitude 1.5 - 2.5
@@ -170,10 +194,10 @@ def train(X, Y, X_dev, Y_dev):
 			dev_accuracies.append(devaccuracy)
 			train_smoothed_cost = float(sum(cost_list)) / len(cost_list)
 			loss_per_epoch.append(train_smoothed_cost)
-			print("Lists for plotting: ")
+			'''print("Lists for plotting: ")
 			print("Train accuracies: ", train_accuracies)
 			print("Dev accuracies: ", dev_accuracies)
-			print("Train smoothed cost: ", loss_per_epoch)
+			print("Train smoothed cost: ", loss_per_epoch)'''
 
 			saver.save(sess, './modelWeights/softmaxautoencoder', global_step = (iteration+1))
 			objectives_summary = tf.Summary()
@@ -191,14 +215,20 @@ def main():
 	shuffle(ind_list)
 	songs = songs.iloc[ind_list]
 	labels = labels.iloc[ind_list]
-	songs_train = songs.iloc[0:18000]
+	'''songs_train = songs.iloc[0:18000]
 	songs_dev = songs.iloc[18000:]
 	labels_train = labels.iloc[0:18000]
-	labels_dev = labels.iloc[18000:]
+	labels_dev = labels.iloc[18000:]'''
+
+	# In the case of 8000 examples
+	songs_train = songs.iloc[0:6000]
+	songs_dev = songs.iloc[6000:]
+	labels_train = labels.iloc[0:6000]
+	labels_dev = labels.iloc[6000:]
 
 	# Write dev values to a csv for testing:
-	songs_dev.to_csv('songs_dev.csv', index = False)
-	labels_dev.to_csv('labels_dev.csv', index = False)
+	'''songs_dev.to_csv('songs_dev.csv', index = False)
+	labels_dev.to_csv('labels_dev.csv', index = False)'''
 
 	train(songs_train, labels_train, songs_dev, labels_dev)
 

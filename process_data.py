@@ -37,6 +37,11 @@ def main():
 			if filename.endswith(".au"):
 				tfm.build('./genres/'+ allgenres[index] + '/' + filename, './genres/' + allgenres[index] + '/' + filename[:-2]+'wav')
 				audio, sr = librosa.core.load('./genres/' + allgenres[index] + '/' + filename[:-2]+'wav')
+				testmfcc = librosa.feature.mfcc(audio, sr)
+				print(testmfcc)
+				print(testmfcc.shape)
+				print(audio.shape)
+				exit()
 				for j in range(numsplit):
 					songs[counter] = audio[(sizesplit * j) : (sizesplit * (j + 1))]
 					labels[counter] = index
