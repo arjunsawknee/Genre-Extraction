@@ -67,7 +67,7 @@ def runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat):
 	plt.cla()
 
 	# run PCA on raw data
-	'''truelabels = tf.math.argmax(Y, axis=1).eval()
+	truelabels = tf.math.argmax(Y, axis=1).eval()
 	pca = decomposition.PCA(n_components = 3)
 	pca.fit(X)
 	latents = pca.transform(X)
@@ -77,13 +77,13 @@ def runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat):
                 label=name, edgecolor='k')
 	plt.title('PCA of 500-Dim Raw Audio Data')
 	plt.legend(loc='upper right', shadow=False, scatterpoints=1)
-	plt.show()'''
+	plt.show()
 
 	# run PCA on encoder results
 	#latents = sess.run([encoding], feed_dict={inputs_batch : X, labels_batch : Y})
 	#latents = latents[0]
 	#run PCA on the logits of the deep softmax autoencoders
-	_, latents = sess.run([encoding, y_hat], feed_dict={inputs_batch : X, labels_batch : Y})
+	'''_, latents = sess.run([encoding, y_hat], feed_dict={inputs_batch : X, labels_batch : Y})
 
 	truelabels = tf.math.argmax(Y, axis=1).eval()
 	pca = decomposition.PCA(n_components = 3)
@@ -104,7 +104,7 @@ def runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat):
 	plt.title('PCA of 4-Dim Deep Softmax Autoencoder Logits')
 	plt.legend(loc='upper right', shadow=False, scatterpoints=1)
 
-	plt.show()
+	plt.show()'''
 
 def runPCA3D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat):
 	allgenres = ['classical', 'jazz', 'metal', 'pop']
@@ -170,22 +170,22 @@ def test(X, Y):
 		correct_labels = truelabels.eval()
 		confmat = confusion_matrix(correct_labels, pred, class_names)
 		np.set_printoptions(precision=2)
-		plt.figure()
-		plot_confusion_matrix(confmat, classes=class_names, normalize=False, title='Confusion matrix, without normalization')
-		plt.figure()
-		plot_confusion_matrix(confmat, classes=class_names, normalize=True, title='Normalized Confusion Matrix over Validation Set')
+		#plt.figure()
+		#plot_confusion_matrix(confmat, classes=class_names, normalize=False, title='Confusion matrix, without normalization')
+		#plt.figure()
+		#plot_confusion_matrix(confmat, classes=class_names, normalize=True, title='Normalized Confusion Matrix over Validation Set')
 		# Commented out to prevent showing the matrix everytime code is run
-		plt.show()
+		#plt.show()
 
 
-		#runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat)
+		runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat)
 		#runPCA3D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat)
 
 
 def main():
-	songs = pd.read_csv('songs_dev.csv')
-	labels = pd.read_csv('labels_dev.csv')
-	#songs, labels = load_data()
+	#songs = pd.read_csv('songs_dev.csv')
+	#labels = pd.read_csv('labels_dev.csv')
+	songs, labels = load_data()
 	test(songs, labels)
 
 if __name__== "__main__":
