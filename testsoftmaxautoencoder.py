@@ -59,16 +59,35 @@ def plot_confusion_matrix(cm, classes,
 	plt.xlabel('Predicted label')
 
 def runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y):
+	# set up
 	allgenres = ['classical', 'jazz', 'metal', 'pop']
-
-	latents = sess.run([encoding], feed_dict={inputs_batch : X, labels_batch : Y})
-	print(Y.shape)
-	truelabels = tf.math.argmax(Y, axis=1).eval()
-
 	fig = plt.figure(1, figsize=(4, 3))
 	plt.clf()
 	ax = plt.axes()
 	plt.cla()
+
+	# run PCA on raw data
+	truelabels = tf.math.argmax(Y, axis=1).eval()
+	pca = decomposition.PCA(n_components = 3)
+	pca.fit(X)
+	latents = pca.transform(X)
+
+	# uncomment out for labels of clusters (may overlap)
+	'''for name, label in [('Classical', 0), ('Jazz', 1), ('Metal', 2), ('Pop', 3)]:
+		ax.text(
+			latents[truelabels == label, 0].mean(),
+			latents[truelabels == label, 1].mean(),
+			name,
+			horizontalalignment = 'center',
+			bbox=dict(alpha=.5, edgecolor='w', facecolor='w'))
+'''
+	ax.scatter(latents[:, 0], latents[:, 1], c=truelabels, cmap=plt.cm.nipy_spectral,
+		   edgecolor='k')
+	plt.show()
+
+	# run PCA on encoder results
+	'''latents = sess.run([encoding], feed_dict={inputs_batch : X, labels_batch : Y})
+	truelabels = tf.math.argmax(Y, axis=1).eval()
 
 	pca = decomposition.PCA(n_components = 3)
 	latents = latents[0]
@@ -85,13 +104,14 @@ def runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y):
 
 	ax.scatter(latents[:, 0], latents[:, 1], c=truelabels, cmap=plt.cm.nipy_spectral,
 		   edgecolor='k')
-	plt.show()
+	ax.legend()
+
+	plt.show()'''
 
 def runPCA3D(sess, encoding, inputs_batch, labels_batch, X, Y):
 	allgenres = ['classical', 'jazz', 'metal', 'pop']
 
 	latents = sess.run([encoding], feed_dict={inputs_batch : X, labels_batch : Y})
-	print(Y.shape)
 	truelabels = tf.math.argmax(Y, axis=1).eval()
 
 	fig = plt.figure(1, figsize=(4, 3))
@@ -115,7 +135,7 @@ def runPCA3D(sess, encoding, inputs_batch, labels_batch, X, Y):
 
 	ax.scatter(latents[:, 0], latents[:, 1], latents[:, 2], c=truelabels, cmap=plt.cm.nipy_spectral,
 		   edgecolor='k')
-	plt.show()
+	#plt.show()
 
 
 def test(X, Y):
@@ -145,10 +165,10 @@ def test(X, Y):
 		correct_labels = truelabels.eval()
 		confmat = confusion_matrix(correct_labels, pred, class_names)
 		np.set_printoptions(precision=2)
-		plt.figure()
-		plot_confusion_matrix(confmat, classes=class_names, normalize=False, title='Confusion matrix, without normalization')
-		plt.figure()
-		plot_confusion_matrix(confmat, classes=class_names, normalize=True, title='Normalized confusion matrix')
+		#plt.figure()
+		#plot_confusion_matrix(confmat, classes=class_names, normalize=False, title='Confusion matrix, without normalization')
+		#plt.figure()
+		#plot_confusion_matrix(confmat, classes=class_names, normalize=True, title='Normalized confusion matrix')
 		# Commented out to prevent showing the matrix everytime code is run
 		#plt.show()
 
