@@ -9,12 +9,12 @@ import librosa
 
 #input_dim = 40000
 input_dim = 500
-num_classes = 10
+num_classes = 4
 alpha = 0.0001
 num_epochs = 200
 batch_size = 512
 
-def get_one_hot(label_num, num_classes = 10):
+def get_one_hot(label_num, num_classes = 4):
     one_hot = np.zeros((1,num_classes))
     one_hot[0, int(label_num)] = 1
     return one_hot
@@ -31,7 +31,9 @@ def load_data():
 	onehotlabels = np.zeros((20000, num_classes))
 	counter = 0
 
-	allgenres = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
+	allgenres = ['classical', 'jazz', 'metal', 'pop']
+
+	#allgenres = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
 	# Splits each song into 10 examples of shape (40000, 1) ~ 2 seconds each
 	'''numsplit = 10
 	sizesplit = 40000'''
@@ -178,10 +180,10 @@ def main():
 	shuffle(ind_list)
 	songs = songs.iloc[ind_list]
 	labels = labels.iloc[ind_list]
-	songs_train = songs.iloc[0:18000]
-	songs_dev = songs.iloc[18000:]
-	labels_train = labels.iloc[0:18000]
-	labels_dev = labels.iloc[18000:]
+	songs_train = songs.iloc[0:6000]
+	songs_dev = songs.iloc[6000:]
+	labels_train = labels.iloc[0:6000]
+	labels_dev = labels.iloc[6000:]
 
 	# Write dev values to a csv for testing:
 	'''songs_dev.to_csv('songs_dev.csv', index = False)
