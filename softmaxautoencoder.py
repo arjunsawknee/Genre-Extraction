@@ -18,7 +18,7 @@ num_classes = 4
 alpha = 0.0001
 num_epochs = 200
 batch_size = 512
-classificationweight = 1
+classificationweight = 0.1
 
 def get_one_hot(label_num, num_classes = 4):
     one_hot = np.zeros((1,num_classes))
@@ -39,7 +39,7 @@ def load_data():
 
 	#allgenres = ['blues', 'classical', 'country', 'disco', 'hiphop', 'jazz', 'metal', 'pop', 'reggae', 'rock']
 	# Use four classes only
-	allgenres = ['classical', 'jazz', 'metal', 'reggae']
+	allgenres = ['classical', 'jazz', 'metal', 'pop']
 	# Splits each song into 10 examples of shape (40000, 1) ~ 2 seconds each
 	'''numsplit = 10
 	sizesplit = 40000'''
@@ -141,8 +141,6 @@ def train(X, Y, X_dev, Y_dev):
 	tf.reset_default_graph()
 	inputs_batch, labels_batch, keep_prob = get_placeholders()
 	weights = add_parameters()
-	# Tunable hyperparameter
-	keep_prob = 0.8
 	encoding = encoder(inputs_batch, weights, keep_prob)
 	decoding = decoder(encoding, weights, keep_prob)
 	tf.add_to_collection("encoding", encoding)
@@ -190,7 +188,7 @@ def train(X, Y, X_dev, Y_dev):
 				batchlabel = labels_batches[i]
 
 
-				bottleneck, reconstruction, preds, _, curr_loss = sess.run([encoding, decoding, y_hat, optimizer, loss], feed_dict={inputs_batch: batch, labels_batch: batchlabel})
+				bottleneck, reconstruction, preds, _, curr_loss = sess.run([encoding, decoding, y_hat, optimizer, loss], feed_dict={inputs_batch: batch, labels_batch: batchlabel, keep_prob : 0.8})
 				#Check if predictions are correct and increment counter/accuracy
 				predictions = tf.math.argmax(preds, axis=1)
 				truelabels = tf.math.argmax(batchlabel, axis=1)
@@ -204,7 +202,7 @@ def train(X, Y, X_dev, Y_dev):
 				#print(curr_loss)
 			accuracy = currnumcorrect / float(X.shape[0])
 			print("Epoch " + str(iteration+1) + ", Train Accuracy: " + str(accuracy))
-			_, preds = sess.run([encoding, y_hat], feed_dict={inputs_batch : X_dev, labels_batch : Y_dev})
+			_, preds = sess.run([encoding, y_hat], feed_dict={inputs_batch : X_dev, labels_batch : Y_dev, keep_prob : 1.0})
 			predictions = tf.math.argmax(preds, axis=1)
 			truelabels = tf.math.argmax(Y_dev, axis=1)
 			numequal = tf.math.equal(predictions, truelabels)
