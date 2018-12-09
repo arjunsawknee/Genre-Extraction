@@ -93,16 +93,27 @@ def runPCA2D(sess, decoding, encoding, inputs_batch, labels_batch, X, Y):
 	pca.fit(latents)
 	latents = pca.transform(latents)
 
-	for name, label in [('Classical', 0), ('Jazz', 1), ('Metal', 2), ('Pop', 3)]:
+	colors = [('red', 'Classical', 0), ('turquoise', 'Jazz', 1), ('darkorange', 'Metal', 2), ('magenta', 'Pop', 3)]
+	colors = reversed(colors)
+	for color, name, label in colors:
+		plt.scatter(latents[truelabels == label, 0], latents[truelabels == label, 1], color=color, alpha=.5,
+                label=name)
+	plt.title('PCA of 128-Dim Vanilla Autoencoder Bottleneck')
+	plt.legend(loc='best', shadow=False, scatterpoints=1)
+	'''for name, label in [('Classical', 0), ('Jazz', 1), ('Metal', 2), ('Pop', 3)]:
 		ax.text(
 			latents[truelabels == label, 0].mean(),
 			latents[truelabels == label, 1].mean(),
 			name,
 			horizontalalignment = 'center',
 			bbox=dict(alpha=.5, edgecolor='w', facecolor='w'))
+		ax.scatter(latents[truelabels == label, 0], latents[truelabels == label, 1], c=truelabels[truelabels==label], cmap=plt.cm.nipy_spectral, edgecolor='k', label=name)'''
 
-	ax.scatter(latents[:, 0], latents[:, 1], c=truelabels, cmap=plt.cm.nipy_spectral,
-		   edgecolor='k')
+
+	'''ax.scatter(latents[:, 0], latents[:, 1], c=truelabels, cmap=plt.cm.nipy_spectral,
+		   edgecolor='k', label='DATA')'''
+
+	
 
 	plt.show()
 
@@ -148,8 +159,8 @@ def test(X, Y):
 		decoding = tf.get_collection('decoding')[0]
 		loss = tf.get_collection('loss')[0]
 
-		#runPCA2D(sess, decoding, encoding, inputs_batch, labels_batch, X, Y)
-		runPCA3D(sess, decoding, encoding, inputs_batch, labels_batch, X, Y)
+		runPCA2D(sess, decoding, encoding, inputs_batch, labels_batch, X, Y)
+		#runPCA3D(sess, decoding, encoding, inputs_batch, labels_batch, X, Y)
 
 
 def main():
