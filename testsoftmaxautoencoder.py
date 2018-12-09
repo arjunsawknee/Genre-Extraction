@@ -16,7 +16,7 @@ import itertools
 
 input_dim = 20000
 num_classes = 10
-alpha = 0.0001
+alpha = 0.00001
 num_epochs = 200
 batch_size = 512
 classificationweight = 0.0001
@@ -93,7 +93,15 @@ def runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat):
 	pca.fit(latents)
 	latents = pca.transform(latents)
 
-	for name, label in [('Classical', 0), ('Jazz', 1), ('Metal', 2), ('Pop', 3)]:
+	colors = [('red', 'Classical', 0), ('turquoise', 'Jazz', 1), ('darkorange', 'Metal', 2), ('magenta', 'Pop', 3)]
+	colors = reversed(colors)
+	for color, name, label in colors:
+		plt.scatter(latents[truelabels == label, 0], latents[truelabels == label, 1], color=color, alpha=.5,
+                label=name)
+	plt.title('PCA of 128-Dim Deep Softmax Autoencoder Bottleneck')
+	plt.legend(loc='best', shadow=False, scatterpoints=1)
+
+	'''for name, label in [('Classical', 0), ('Jazz', 1), ('Metal', 2), ('Pop', 3)]:
 		ax.text(
 			latents[truelabels == label, 0].mean(),
 			latents[truelabels == label, 1].mean(),
@@ -102,7 +110,7 @@ def runPCA2D(sess, encoding, inputs_batch, labels_batch, X, Y, y_hat):
 			bbox=dict(alpha=.5, edgecolor='w', facecolor='w'))
 
 	ax.scatter(latents[:, 0], latents[:, 1], c=truelabels, cmap=plt.cm.nipy_spectral,
-		   edgecolor='k')
+		   edgecolor='k')'''
 
 	plt.show()
 
